@@ -1,0 +1,119 @@
+/* :root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+} */
+@import "tailwindcss";
+
+/* Base styles for your premium medical UI */
+@layer base {
+  body {
+    background-color: #f8fafc; /* bg-slate-50 */
+    color: #0f172a; /* text-slate-900 */
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@theme {
+  --animate-border-spin: border-spin 4s linear infinite;
+
+  @keyframes border-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+}
+
+/* Custom class for the moving border effect */
+.moving-border-container {
+  @apply relative overflow-hidden bg-slate-200;
+  padding: 2px; /* This defines the thickness of the green line */
+}
+
+.moving-border-content {
+  @apply relative z-10 bg-white w-full h-full rounded-[inherit];
+}
+
+.moving-border-line {
+  @apply absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-border-spin;
+  background: conic-gradient(transparent, transparent, transparent, #22c55e); /* #22c55e is the green */
+}
+
+@theme {
+  --animate-marquee: marquee 25s linear infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+@theme {
+  --animate-marquee-vertical: marquee-vertical 30s linear infinite;
+
+  @keyframes marquee-vertical {
+    from { transform: translateY(0); }
+    to { transform: translateY(-50%); }
+  }
+}
