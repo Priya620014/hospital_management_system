@@ -1,6 +1,6 @@
 
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"; // Added useLocation
 import Home from "./pages/Home";
 import Contact from "./pages/Contact"; 
 import Navbar from "./components/Navbar";
@@ -9,25 +9,82 @@ import Services from "./pages/Services";
 import Doctors from "./pages/Doctors";
 import DoctorProfile from "./pages/DoctorProfile";
 import ScrollToTop from "./components/ScrollToTop";
+import ServiceBooking from "./pages/ServiceBooking";
+import Appointments from "./pages/Appointments";
+import { ClerkProvider, ClerkLoaded, ClerkLoading } from '@clerk/clerk-react';
+import LoginModal from "./components/LoginModal";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminNavbar from "./components/AdminNavbar";
+import AddDoctor from "./pages/AddDoctor";
+import ListDoctors from "./pages/ListDoctors";
+import AdminAppointments from "./pages/AdminAppointment";
+import ServiceDashboard from "./pages/ServiceDashboard";
 
-// Inside <Routes>
+const PUBLISHABLE_KEY = "pk_test_dmVyaWZpZWQtZ3JpenpseS0xNi5jbGVyay5hY2NvdW50cy5kZXYk";
 
+// NEW: Layout wrapper to handle conditional Navbars
+const AppContent = ({ openLogin, isLoginOpen, setIsLoginOpen }) => {
+  const location = useLocation();
+  // Check if current path is an admin path
+  const isAdminPath = location.pathname.startsWith("/admin");
 
-const App = () => {
   return (
-    <Router>
-      <ScrollToTop/>
-      <Navbar />
+    <>
+      <ScrollToTop />
+      {/* Switch Navbars based on the route */}
+      {isAdminPath ? <AdminNavbar /> : <Navbar onLoginClick={openLogin} />}
+      
       <Routes>
         <Route path="/" element={<Home />} />
-        {/* Ensure the path here matches your Navbar link */}
         <Route path="/contact" element={<Contact />} /> 
         <Route path="/services" element={<Services />} />
-        <Route path="/doctors" element={<Doctors />} />
-        <Route path="/doctor/:id" element={<DoctorProfile />} />
+        <Route path="/doctors" element={<Doctors onLoginClick={openLogin} />} />
+        <Route path="/doctor/:id" element={<DoctorProfile onLoginClick={openLogin} />} />
+        <Route path="/services/:serviceName" element={<ServiceBooking />} />
+        <Route path="/appointments" element={<Appointments />} />
+        {/* Ensure admin route starts with /admin for the navbar check */}
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/add-doctor" element={<AddDoctor />} />
+        <Route path="/admin/list-doctors" element={<ListDoctors />} />
+        // Inside AppContent in App.jsx
+<Route path="/admin/appointments" element={<AdminAppointments />} />
+<Route path="/admin/service-dashboard" element={<ServiceDashboard />} />
+
       </Routes>
-      <Footer />
-    </Router>
+
+      <LoginModal 
+        isOpen={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
+      />
+      
+      {/* Only show standard footer on user pages */}
+      {!isAdminPath && <Footer />}
+    </>
+  );
+};
+
+const App = () => {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const openLogin = () => setIsLoginOpen(true);
+
+  return (
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+      <ClerkLoading>
+        <div className="min-h-screen flex items-center justify-center bg-[#f1fcfb]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00a386]"></div>
+        </div>
+      </ClerkLoading>
+
+      <ClerkLoaded>
+        <Router>
+          <AppContent 
+            openLogin={openLogin} 
+            isLoginOpen={isLoginOpen} 
+            setIsLoginOpen={setIsLoginOpen} 
+          />
+        </Router>
+      </ClerkLoaded>
+    </ClerkProvider>
   );
 };
 

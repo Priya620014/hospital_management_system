@@ -1,30 +1,59 @@
 
-// import React, { useState } from "react";
+// import React, { useState, useEffect } from "react";
 // import { useParams, useNavigate } from "react-router-dom";
 // import { 
 //   ArrowLeft, Star, GraduationCap, MapPin, 
-//   Clock, ShieldCheck, Calendar, User, Phone, X, LockKeyhole
+//   Clock, ShieldCheck, Calendar, Phone, X, LockKeyhole, User as UserIcon, CheckCircle
 // } from "lucide-react";
+// import { useAuth, useUser } from "@clerk/clerk-react";
 
-// const DoctorProfile = () => {
+// const DoctorProfile = ({ onLoginClick }) => {
 //   const { id } = useParams();
 //   const navigate = useNavigate();
+//   const { isSignedIn } = useAuth(); 
+//   const { user } = useUser();
   
-//   // Dynamic Image Mapping based on your Medical Experts list
-//   const doctorData = {
-//     mri: { img: "/images/doctor1.jpg", specialty: "Pediatrics" },
-//     kevin: { img: "/images/doc2.jpg", specialty: "Brain" },
-//     sarah: { img: "/images/doc3.jpeg", specialty: "Cardiology" },
-//     robert: { img: "/images/doc4.jpeg", specialty: "Orthopedic" }
-//   };
-
-//   // Get current doctor details or use placeholder if not found
-//   const currentDoc = doctorData[id?.toLowerCase()] || { img: "/images/mri.png", specialty: "Specialist" };
-
+//   const [doctor, setDoctor] = useState(null);
+//   const [loading, setLoading] = useState(true);
 //   const [selectedDate, setSelectedDate] = useState(null);
 //   const [paymentMethod, setPaymentMethod] = useState("Cash");
 //   const [showLoginPopup, setShowLoginPopup] = useState(false);
-//   const [isLoggedIn, setIsLoggedIn] = useState(false); 
+//   const [showSuccess, setShowSuccess] = useState(false); // FIXED: Added missing state
+
+//   const [patientDetails, setPatientDetails] = useState({
+//     fullName: "",
+//     email: "",
+//     age: "",
+//     mobile: "",
+//     gender: "Gender"
+//   });
+
+//   useEffect(() => {
+//     const fetchDoctorDetails = async () => {
+//       try {
+//         const response = await fetch(`http://localhost:4000/api/doctors/${id}`);
+//         if (!response.ok) { setDoctor(null); return; }
+//         const data = await response.json();
+//         setDoctor(data);
+//       } catch (err) { setDoctor(null); } finally { setLoading(false); }
+//     };
+//     fetchDoctorDetails();
+//   }, [id]);
+
+//   useEffect(() => {
+//     if (user) {
+//       setPatientDetails(prev => ({
+//         ...prev,
+//         fullName: user.fullName || "",
+//         email: user.primaryEmailAddress?.emailAddress || ""
+//       }));
+//     }
+//   }, [user]);
+
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setPatientDetails(prev => ({ ...prev, [name]: value }));
+//   };
 
 //   const getNextSevenDays = () => {
 //     const days = [];
@@ -43,20 +72,120 @@
 
 //   const dates = getNextSevenDays();
 
-//   const handleBookingAttempt = () => {
-//     if (!isLoggedIn) {
-//       setShowLoginPopup(true);
+//   const handleBookingAttempt = async () => {
+//     if (!isSignedIn) return setShowLoginPopup(true);
+//     const { fullName, age, mobile, gender } = patientDetails;
+  
+ 
+//   if (!fullName.trim() || !age || !mobile.trim() || gender === "Gender") {
+//     console.log("Validation Failed:", { fullName, age, mobile, gender });
+//     alert("Please fill in all patient details (Name, Age, Mobile, and Gender).");
+//     return; // Button stops here if details are missing
+//   }
+
+//     if (paymentMethod === "Online") {
+//       try {
+//         const orderRes = await fetch("http://localhost:4000/api/create-order", {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({ amount: doctor.fees || 1000 }),
+//         });
+
+//         if (!orderRes.ok) throw new Error("Backend failed to create order");
+//         const order = await orderRes.json();
+
+//         const options = {
+//           key: "rzp_test_eWbSbu5AuEM5Ey", 
+//           amount: order.amount,
+//           currency: "INR",
+//           name: "Medicare+",
+//           description: "Doctor Consultation",
+//           order_id: order.id,
+//           handler: async (response) => {
+//             const verifyRes = await fetch("http://localhost:4000/api/verify-payment", {
+//               method: "POST",
+//               headers: { "Content-Type": "application/json" },
+//               body: JSON.stringify(response),
+//             });
+//             const verifyData = await verifyRes.json();
+
+//             if (verifyData.status === "success") {
+//               saveBookingToDatabase(response.razorpay_payment_id);
+//             } else {
+//               alert("Payment verification failed");
+//             }
+//           },
+//           prefill: {
+//             name: patientDetails.fullName,
+//             contact: patientDetails.mobile,
+//           },
+//           theme: { color: "#00a386" },
+//         };
+
+//         const rzp = new window.Razorpay(options);
+//         rzp.open();
+
+//       } catch (err) {
+//         alert("Could not initialize payment. Check Console.");
+//       }
 //     } else {
-//       alert("Booking confirmed successfully!");
+//       saveBookingToDatabase("CASH_PAYMENT");
 //     }
 //   };
 
+//   const saveBookingToDatabase = async (paymentId) => {
+//     const response = await fetch("http://localhost:4000/api/appointments", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({
+//         userId: user.id,
+//         doctorName: doctor.name,
+//         patientName: patientDetails.fullName, // FIXED: Using correct state name
+//         patientAge: patientDetails.age,
+//         patientMobile: patientDetails.mobile,
+//         appointmentDate: selectedDate,
+//         paymentId: paymentId,
+//         status: "Confirmed"
+//       }),
+//     });
+
+//     if (response.ok) setShowSuccess(true);
+//   };
+
+//   if (loading) return <div className="pt-40 text-center font-bold text-teal-600">Loading Doctor Profile...</div>;
+//   if (!doctor) return <div className="pt-40 text-center text-rose-500">Doctor not found in Database.</div>;
+
 //   return (
-//     <div className="min-h-screen bg-[#f1fcfb] py-10 px-6 lg:px-24 relative">
+//     <div className="min-h-screen bg-[#f1fcfb] pt-32 pb-20 px-6 lg:px-24 relative overflow-x-hidden">
       
-//       {/* 1. LOGIN REQUIRED POPUP */}
+//       {/* SUCCESS POPUP */}
+//       {showSuccess && (
+//         <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
+//           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+//           <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative z-10 text-center space-y-6">
+//             <button 
+//         onClick={() => setShowSuccess(false)} 
+//         className="absolute top-6 right-6 text-slate-400 hover:text-rose-500 transition-colors"
+//       >
+//         <X size={24} />
+//       </button>
+//             <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto text-[#00a386]">
+//               <CheckCircle size={40} />
+//             </div>
+//             <h3 className="text-xl font-black text-slate-900">Booking Confirmed!</h3>
+//             <p className="text-slate-500 text-sm leading-relaxed">Your appointment has been scheduled successfully.</p>
+//             <button 
+//               onClick={() => navigate("/appointments")} 
+//               className="w-full bg-[#00a386] text-white py-4 rounded-full font-black text-sm shadow-md"
+//             >
+//               Go to Appointments
+//             </button>
+//           </div>
+//         </div>
+//       )}
+
 //       {showLoginPopup && (
-//         <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+//         <div className="fixed inset-0 z-[150] flex items-center justify-center px-6">
 //           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowLoginPopup(false)}></div>
 //           <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl relative z-10 text-center space-y-6 border border-slate-100 animate-in fade-in zoom-in duration-300">
 //             <button onClick={() => setShowLoginPopup(false)} className="absolute top-6 right-6 text-slate-400 hover:text-rose-500 transition-colors">
@@ -67,15 +196,16 @@
 //             </div>
 //             <div className="space-y-2">
 //               <h2 className="text-2xl font-black text-slate-900">Authentication Required</h2>
-//               <p className="text-slate-500 font-medium text-sm leading-relaxed">
-//                 To ensure a secure booking experience, please log in to your account first.
-//               </p>
+//               <p className="text-slate-500 font-medium text-sm leading-relaxed">Please log in to your account first.</p>
 //             </div>
 //             <div className="pt-4 flex flex-col gap-3">
-//               <button onClick={() => navigate("/login")} className="w-full bg-[#00a386] text-white py-4 rounded-full font-black text-sm shadow-lg shadow-teal-100 hover:bg-[#008f75] transition-all">
+//               <button 
+//                 onClick={() => { setShowLoginPopup(false); onLoginClick(); }} 
+//                 className="w-full bg-[#00a386] text-white py-4 rounded-full font-black text-sm"
+//               >
 //                 LOGIN NOW
 //               </button>
-//               <button onClick={() => setShowLoginPopup(false)} className="text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-600 transition">
+//               <button onClick={() => setShowLoginPopup(false)} className="text-slate-400 font-bold text-xs uppercase tracking-widest">
 //                 Maybe Later
 //               </button>
 //             </div>
@@ -83,9 +213,8 @@
 //         </div>
 //       )}
 
-//       {/* 2. NAVIGATION HEADER */}
 //       <div className="max-w-6xl mx-auto flex justify-between items-center mb-10 bg-white p-4 rounded-2xl shadow-sm border border-slate-50">
-//         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#00a386] font-bold border border-teal-100 px-4 py-2 rounded-full hover:bg-teal-50 transition">
+//         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#00a386] font-bold border border-teal-100 px-4 py-2 rounded-full hover:bg-teal-50">
 //           <ArrowLeft size={18} /> Back
 //         </button>
 //         <h1 className="text-2xl font-black text-[#137d6e]">Doctor Profile</h1>
@@ -95,37 +224,33 @@
 //       </div>
 
 //       <div className="max-w-6xl mx-auto space-y-8">
-//         {/* 3. BIO CARD */}
 //         <div className="bg-white rounded-[3rem] p-8 lg:p-12 shadow-xl shadow-teal-50 border border-slate-50 flex flex-col lg:flex-row gap-12">
 //           <div className="flex flex-col items-center gap-6">
 //             <div className="relative">
-//                <div className="absolute inset-0 bg-green-400 rounded-full blur-2xl opacity-20 animate-pulse"></div>
-//                {/* Updated Image Source */}
-//                <img src={currentDoc.img} alt="Doctor" className="relative z-10 w-48 h-48 rounded-full border-8 border-[#f1fcfb] shadow-inner object-cover" />
+//                <img src={doctor.imageUrl} alt={doctor.name} className="relative z-10 w-48 h-48 rounded-full border-8 border-[#f1fcfb] shadow-inner object-cover" />
 //             </div>
 //             <div className="flex gap-4">
 //               <StatCard label="Success" value="95%" icon="❤️" />
-//               <StatCard label="Experience" value="5 Years" icon="🎓" />
-//               <StatCard label="Patients" value="100" icon="👥" />
+//               <StatCard label="Experience" value={`${doctor.experience} Years`} icon="🎓" />
+//               <StatCard label="Patients" value="100+" icon="👥" />
 //             </div>
 //           </div>
 //           <div className="flex-1 space-y-6">
 //             <div>
-//               <h2 className="text-4xl font-black text-slate-900 capitalize leading-tight">Dr {id}</h2>
+//               <h2 className="text-4xl font-black text-slate-900 capitalize leading-tight">Dr {doctor.name}</h2>
 //               <span className="inline-block bg-[#00a386] text-white px-6 py-1.5 rounded-full text-xs font-bold mt-2 uppercase tracking-widest">
-//                 🩺 {currentDoc.specialty}
+//                 🩺 {doctor.specialty}
 //               </span>
 //             </div>
 //             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//               <InfoBadge icon={<GraduationCap size={18}/>} label="Qualifications" value="Professor" />
-//               <InfoBadge icon={<MapPin size={18}/>} label="Location" value="Lucknow, India" />
-//               <InfoBadge icon={<Clock size={18}/>} label="Consultation Fee" value="₹1000" color="text-rose-500" />
-//               <InfoBadge icon={<ShieldCheck size={18}/>} label="Availability" value="Available" color="text-green-500" />
+//               <InfoBadge icon={<GraduationCap size={18}/>} label="Qualifications" value="MBBS, MD" />
+//               <InfoBadge icon={<MapPin size={18}/>} label="Location" value="Hospital Main Wing" />
+//               <InfoBadge icon={<Clock size={18}/>} label="Consultation Fee" value={`₹${doctor.fees || 1000}`} color="text-rose-500" />
+//               <InfoBadge icon={<ShieldCheck size={18}/>} label="Availability" value="Mon - Sat" color="text-green-500" />
 //             </div>
 //           </div>
 //         </div>
 
-//         {/* 4. BOOKING SECTION */}
 //         <div className="bg-white rounded-[3rem] p-8 lg:p-12 shadow-xl shadow-teal-50 border border-slate-50">
 //           <h2 className="text-3xl font-black text-[#137d6e] mb-8 italic flex items-center gap-3">
 //             <Calendar className="text-green-500" /> Book Your Appointment
@@ -153,51 +278,66 @@
 //                         <span className="text-[10px] font-bold uppercase">{date.month}</span>
 //                       </button>
 //                     ))}
-                    
-//                     <div className="relative flex-shrink-0 w-20 h-24 rounded-full border-2 border-dashed border-teal-200 bg-teal-50/30 group hover:border-teal-400 transition-colors cursor-pointer overflow-hidden">
-//                       <div className="flex flex-col items-center justify-center w-full h-full">
-//                         <span className="text-[10px] font-black text-teal-600 mb-1">OTHER</span>
-//                         <Calendar size={22} className="text-teal-600" />
-//                       </div>
-//                       <input 
-//                         type="date" 
-//                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-//                         min={new Date().toISOString().split("T")[0]} 
-//                         onChange={(e) => {
-//                           if(e.target.value) {
-//                             const picked = new Date(e.target.value);
-//                             setSelectedDate(picked.toDateString());
-//                           }
-//                         }}
-//                       />
-//                     </div>
 //                   </div>
 //                 </div>
 
 //                 <div className="space-y-6">
-//                    <h3 className="text-sm font-black text-teal-700 uppercase tracking-widest flex items-center gap-2">
-//                       <ShieldCheck size={16}/> Patient Details
-//                    </h3>
-//                    <div className="grid grid-cols-2 gap-4">
-//                       <input type="text" placeholder="Full Name" className="col-span-1 bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
-//                       <input type="number" placeholder="Age" className="bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
-//                    </div>
-//                    <input type="tel" placeholder="Mobile Number (10 digits)" className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
-//                    <select className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none appearance-none cursor-pointer">
-//                       <option>Gender</option>
-//                       <option>Male</option>
-//                       <option>Female</option>
-//                       <option>Others</option>
-//                    </select>
-//                    <input type="email" placeholder="Email (optional - for receipts)" className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
+//                   <h3 className="text-sm font-black text-teal-700 uppercase tracking-widest flex items-center gap-2">
+//                     <ShieldCheck size={16}/> Patient Details
+//                   </h3>
+//                   <div className="grid grid-cols-2 gap-4">
+//                     <input 
+//                       name="fullName"
+//                       value={patientDetails.fullName}
+//                       onChange={handleInputChange}
+//                       type="text" 
+//                       placeholder="Full Name" 
+//                       className="col-span-1 bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" 
+//                     />
+//                     <input 
+//                       name="age"
+//                       value={patientDetails.age}
+//                       onChange={handleInputChange}
+//                       type="number" 
+//                       placeholder="Age" 
+//                       className="bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" 
+//                     />
+//                   </div>
+//                   <input 
+//                     name="mobile"
+//                     value={patientDetails.mobile}
+//                     onChange={handleInputChange}
+//                     type="tel" 
+//                     placeholder="Mobile Number" 
+//                     className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" 
+//                   />
+//                   <select 
+//                     name="gender"
+//                     value={patientDetails.gender}
+//                     onChange={handleInputChange}
+//                     className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none appearance-none cursor-pointer"
+//                   >
+//                     <option>Gender</option>
+//                     <option>Male</option>
+//                     <option>Female</option>
+//                   </select>
+
+//                  <input 
+//                     name="email"
+//                     value={patientDetails.email}
+//                     readOnly
+//                     type="email"
+//                     placeholder="Email Address"
+//                     className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none mt-2 opacity-70"
+//                   />
 //                 </div>
 //              </div>
 
 //              <div className="bg-[#f1fcfb] p-8 rounded-[2.5rem] border border-teal-50 space-y-6 h-fit sticky top-10">
 //                 <div className="space-y-4 text-sm font-bold text-slate-600">
-//                    <SummaryRow label="Selected Doctor" value={`Dr ${id}`} />
+//                    <SummaryRow label="Selected Doctor" value={`Dr ${doctor.name}`} />
 //                    <SummaryRow label="Selected Date" value={selectedDate || "Not selected"} color={selectedDate ? "text-teal-700" : "text-rose-400"} />
-//                    <SummaryRow label="Consultation Fee" value="₹1000" color="text-rose-500" />
+//                    <SummaryRow label="Consultation Fee" value={`₹${doctor.fees || 1000}`} color="text-rose-500" />
 //                 </div>
 //                 <div className="pt-6 border-t border-teal-100">
 //                    <p className="text-[10px] font-black text-teal-600 uppercase mb-4 tracking-widest">Payment Method</p>
@@ -221,6 +361,7 @@
 //   );
 // };
 
+// // Sub-components
 // const StatCard = ({ label, value, icon }) => (
 //   <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-50 text-center flex-1 min-w-[85px]">
 //     <span className="text-xl mb-1 block">{icon}</span>
@@ -247,31 +388,61 @@
 // );
 
 // export default DoctorProfile;
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Star, GraduationCap, MapPin, 
-  Clock, ShieldCheck, Calendar, User, Phone, X, LockKeyhole
+  Clock, ShieldCheck, Calendar, Phone, X, LockKeyhole, User as UserIcon, CheckCircle, IndianRupee
 } from "lucide-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 
-const DoctorProfile = () => {
+const DoctorProfile = ({ onLoginClick }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isSignedIn } = useAuth(); 
+  const { user } = useUser();
   
-  // Dynamic Image Mapping based on your Medical Experts list
-  const doctorData = {
-    mri: { img: "/images/doctor1.jpg", specialty: "Pediatrics" },
-    kevin: { img: "/images/doc2.jpg", specialty: "Brain" },
-    sarah: { img: "/images/doc3.jpeg", specialty: "Cardiology" },
-    robert: { img: "/images/doc4.jpeg", specialty: "Orthopedic" }
-  };
-
-  const currentDoc = doctorData[id?.toLowerCase()] || { img: "/images/mri.png", specialty: "Specialist" };
-
+  const [doctor, setDoctor] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [showLoginPopup, setShowLoginPopup] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const [patientDetails, setPatientDetails] = useState({
+    fullName: "",
+    email: "",
+    age: "",
+    mobile: "",
+    gender: "Gender"
+  });
+
+  useEffect(() => {
+    const fetchDoctorDetails = async () => {
+      try {
+        const response = await fetch(`http://localhost:4000/api/doctors/${id}`);
+        if (!response.ok) { setDoctor(null); return; }
+        const data = await response.json();
+        setDoctor(data);
+      } catch (err) { setDoctor(null); } finally { setLoading(false); }
+    };
+    fetchDoctorDetails();
+  }, [id]);
+
+  useEffect(() => {
+    if (user) {
+      setPatientDetails(prev => ({
+        ...prev,
+        fullName: user.fullName || "",
+        email: user.primaryEmailAddress?.emailAddress || ""
+      }));
+    }
+  }, [user]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setPatientDetails(prev => ({ ...prev, [name]: value }));
+  };
 
   const getNextSevenDays = () => {
     const days = [];
@@ -290,21 +461,121 @@ const DoctorProfile = () => {
 
   const dates = getNextSevenDays();
 
-  const handleBookingAttempt = () => {
-    if (!isLoggedIn) {
-      setShowLoginPopup(true);
+  const handleBookingAttempt = async () => {
+    if (!isSignedIn) return setShowLoginPopup(true);
+    const { fullName, age, mobile, gender } = patientDetails;
+  
+    if (!fullName.trim() || !age || !mobile.trim() || gender === "Gender") {
+      alert("Please fill in all patient details (Name, Age, Mobile, and Gender).");
+      return; 
+    }
+
+    if (paymentMethod === "Online") {
+      try {
+        const orderRes = await fetch("http://localhost:4000/api/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: doctor.fees || 1000 }),
+        });
+
+        if (!orderRes.ok) throw new Error("Backend failed to create order");
+        const order = await orderRes.json();
+
+        const options = {
+          key: "rzp_test_eWbSbu5AuEM5Ey", 
+          amount: order.amount,
+          currency: "INR",
+          name: "Medicare+",
+          description: "Doctor Consultation",
+          order_id: order.id,
+          handler: async (response) => {
+            const verifyRes = await fetch("http://localhost:4000/api/verify-payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(response),
+            });
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.status === "success") {
+              saveBookingToDatabase(response.razorpay_payment_id);
+            } else {
+              alert("Payment verification failed");
+            }
+          },
+          prefill: {
+            name: patientDetails.fullName,
+            contact: patientDetails.mobile,
+          },
+          theme: { color: "#00a386" },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+
+      } catch (err) {
+        alert("Could not initialize payment. Check Console.");
+      }
     } else {
-      alert("Booking confirmed successfully!");
+      saveBookingToDatabase("CASH_PAYMENT");
     }
   };
 
+  const saveBookingToDatabase = async (paymentId) => {
+    // UPDATED: Mapping patientDetails to the new schema keys
+    const response = await fetch("http://localhost:4000/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user.id,
+        userEmail: patientDetails.email,
+        doctorName: doctor.name,
+        doctorId: doctor._id,
+        specialty: doctor.specialty, // Added for Admin Card visibility
+        fees: doctor.fees || 1000,   // Added for Admin Card visibility
+        patientName: patientDetails.fullName, 
+        patientAge: patientDetails.age,
+        patientGender: patientDetails.gender,
+        patientMobile: patientDetails.mobile,
+        appointmentDate: selectedDate,
+        appointmentTime: "10:00 AM", // You can update this with a time picker later
+        paymentId: paymentId,
+        paymentMethod: paymentMethod,
+        status: "Confirmed"
+      }),
+    });
+
+    if (response.ok) setShowSuccess(true);
+  };
+
+  if (loading) return <div className="pt-40 text-center font-bold text-teal-600">Loading Doctor Profile...</div>;
+  if (!doctor) return <div className="pt-40 text-center text-rose-500">Doctor not found in Database.</div>;
+
   return (
-    // Added pt-32 to push content below the fixed navbar
     <div className="min-h-screen bg-[#f1fcfb] pt-32 pb-20 px-6 lg:px-24 relative overflow-x-hidden">
       
-      {/* 1. LOGIN REQUIRED POPUP */}
+      {/* SUCCESS POPUP */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative z-10 text-center space-y-6">
+            <button onClick={() => setShowSuccess(false)} className="absolute top-6 right-6 text-slate-400 hover:text-rose-500 transition-colors">
+              <X size={24} />
+            </button>
+            <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto text-[#00a386]">
+              <CheckCircle size={40} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900">Booking Confirmed!</h3>
+            <p className="text-slate-500 text-sm leading-relaxed">Your appointment has been scheduled successfully.</p>
+            <button onClick={() => navigate("/appointments")} className="w-full bg-[#00a386] text-white py-4 rounded-full font-black text-sm shadow-md">
+              Go to Appointments
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* LOGIN POPUP */}
       {showLoginPopup && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowLoginPopup(false)}></div>
           <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl relative z-10 text-center space-y-6 border border-slate-100 animate-in fade-in zoom-in duration-300">
             <button onClick={() => setShowLoginPopup(false)} className="absolute top-6 right-6 text-slate-400 hover:text-rose-500 transition-colors">
@@ -315,15 +586,13 @@ const DoctorProfile = () => {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-black text-slate-900">Authentication Required</h2>
-              <p className="text-slate-500 font-medium text-sm leading-relaxed">
-                To ensure a secure booking experience, please log in to your account first.
-              </p>
+              <p className="text-slate-500 font-medium text-sm leading-relaxed">Please log in to your account first.</p>
             </div>
             <div className="pt-4 flex flex-col gap-3">
-              <button onClick={() => navigate("/login")} className="w-full bg-[#00a386] text-white py-4 rounded-full font-black text-sm shadow-lg shadow-teal-100 hover:bg-[#008f75] transition-all">
+              <button onClick={() => { setShowLoginPopup(false); onLoginClick(); }} className="w-full bg-[#00a386] text-white py-4 rounded-full font-black text-sm">
                 LOGIN NOW
               </button>
-              <button onClick={() => setShowLoginPopup(false)} className="text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-600 transition">
+              <button onClick={() => setShowLoginPopup(false)} className="text-slate-400 font-bold text-xs uppercase tracking-widest">
                 Maybe Later
               </button>
             </div>
@@ -331,9 +600,9 @@ const DoctorProfile = () => {
         </div>
       )}
 
-      {/* 2. NAVIGATION HEADER */}
+      {/* HEADER */}
       <div className="max-w-6xl mx-auto flex justify-between items-center mb-10 bg-white p-4 rounded-2xl shadow-sm border border-slate-50">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#00a386] font-bold border border-teal-100 px-4 py-2 rounded-full hover:bg-teal-50 transition">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#00a386] font-bold border border-teal-100 px-4 py-2 rounded-full hover:bg-teal-50">
           <ArrowLeft size={18} /> Back
         </button>
         <h1 className="text-2xl font-black text-[#137d6e]">Doctor Profile</h1>
@@ -342,37 +611,36 @@ const DoctorProfile = () => {
         </div>
       </div>
 
+      {/* PROFILE CARD */}
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* 3. BIO CARD */}
         <div className="bg-white rounded-[3rem] p-8 lg:p-12 shadow-xl shadow-teal-50 border border-slate-50 flex flex-col lg:flex-row gap-12">
           <div className="flex flex-col items-center gap-6">
             <div className="relative">
-               <div className="absolute inset-0 bg-green-400 rounded-full blur-2xl opacity-20 animate-pulse"></div>
-               <img src={currentDoc.img} alt="Doctor" className="relative z-10 w-48 h-48 rounded-full border-8 border-[#f1fcfb] shadow-inner object-cover" />
+               <img src={doctor.imageUrl} alt={doctor.name} className="relative z-10 w-48 h-48 rounded-full border-8 border-[#f1fcfb] shadow-inner object-cover" />
             </div>
             <div className="flex gap-4">
               <StatCard label="Success" value="95%" icon="❤️" />
-              <StatCard label="Experience" value="5 Years" icon="🎓" />
-              <StatCard label="Patients" value="100" icon="👥" />
+              <StatCard label="Experience" value={`${doctor.experience} Years`} icon="🎓" />
+              <StatCard label="Patients" value="100+" icon="👥" />
             </div>
           </div>
           <div className="flex-1 space-y-6">
             <div>
-              <h2 className="text-4xl font-black text-slate-900 capitalize leading-tight">Dr {id}</h2>
+              <h2 className="text-4xl font-black text-slate-900 capitalize leading-tight">Dr {doctor.name}</h2>
               <span className="inline-block bg-[#00a386] text-white px-6 py-1.5 rounded-full text-xs font-bold mt-2 uppercase tracking-widest">
-                🩺 {currentDoc.specialty}
+                🩺 {doctor.specialty}
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InfoBadge icon={<GraduationCap size={18}/>} label="Qualifications" value="Professor" />
-              <InfoBadge icon={<MapPin size={18}/>} label="Location" value="Lucknow, India" />
-              <InfoBadge icon={<Clock size={18}/>} label="Consultation Fee" value="₹1000" color="text-rose-500" />
-              <InfoBadge icon={<ShieldCheck size={18}/>} label="Availability" value="Available" color="text-green-500" />
+              <InfoBadge icon={<GraduationCap size={18}/>} label="Qualifications" value="MBBS, MD" />
+              <InfoBadge icon={<MapPin size={18}/>} label="Location" value="Hospital Main Wing" />
+              <InfoBadge icon={<IndianRupee size={18}/>} label="Consultation Fee" value={`₹${doctor.fees || 1000}`} color="text-rose-500" />
+              <InfoBadge icon={<ShieldCheck size={18}/>} label="Availability" value="Mon - Sat" color="text-green-500" />
             </div>
           </div>
         </div>
 
-        {/* 4. BOOKING SECTION */}
+        {/* BOOKING SECTION */}
         <div className="bg-white rounded-[3rem] p-8 lg:p-12 shadow-xl shadow-teal-50 border border-slate-50">
           <h2 className="text-3xl font-black text-[#137d6e] mb-8 italic flex items-center gap-3">
             <Calendar className="text-green-500" /> Book Your Appointment
@@ -400,67 +668,45 @@ const DoctorProfile = () => {
                         <span className="text-[10px] font-bold uppercase">{date.month}</span>
                       </button>
                     ))}
-                    
-                    <div className="relative flex-shrink-0 w-20 h-24 rounded-full border-2 border-dashed border-teal-200 bg-teal-50/30 group hover:border-teal-400 transition-colors cursor-pointer overflow-hidden">
-                      <div className="flex flex-col items-center justify-center w-full h-full">
-                        <span className="text-[10px] font-black text-teal-600 mb-1">OTHER</span>
-                        <Calendar size={22} className="text-teal-600" />
-                      </div>
-                      <input 
-                        type="date" 
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                        min={new Date().toISOString().split("T")[0]} 
-                        onChange={(e) => {
-                          if(e.target.value) {
-                            const picked = new Date(e.target.value);
-                            setSelectedDate(picked.toDateString());
-                          }
-                        }}
-                      />
-                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                   <h3 className="text-sm font-black text-teal-700 uppercase tracking-widest flex items-center gap-2">
-                      <ShieldCheck size={16}/> Patient Details
-                   </h3>
-                   <div className="grid grid-cols-2 gap-4">
-                      <input type="text" placeholder="Full Name" className="col-span-1 bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
-                      <input type="number" placeholder="Age" className="bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
-                   </div>
-                   <input type="tel" placeholder="Mobile Number (10 digits)" className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
-                   <select className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none appearance-none cursor-pointer">
-                      <option>Gender</option>
-                      <option>Male</option>
-                      <option>Female</option>
-                      <option>Others</option>
-                   </select>
-                   <input type="email" placeholder="Email (optional - for receipts)" className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
+                  <h3 className="text-sm font-black text-teal-700 uppercase tracking-widest flex items-center gap-2">
+                    <UserIcon size={16}/> Patient Details
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input name="fullName" value={patientDetails.fullName} onChange={handleInputChange} type="text" placeholder="Full Name" className="bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
+                    <input name="age" value={patientDetails.age} onChange={handleInputChange} type="number" placeholder="Age" className="bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
+                  </div>
+                  <input name="mobile" value={patientDetails.mobile} onChange={handleInputChange} type="tel" placeholder="Mobile Number" className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none" />
+                  <select name="gender" value={patientDetails.gender} onChange={handleInputChange} className="w-full bg-[#f1fcfb] border border-green-100 rounded-full py-4 px-6 text-sm outline-none appearance-none cursor-pointer">
+                    <option>Gender</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                  </select>
                 </div>
              </div>
 
              <div className="bg-[#f1fcfb] p-8 rounded-[2.5rem] border border-teal-50 space-y-6 h-fit sticky top-10">
                 <div className="space-y-4 text-sm font-bold text-slate-600">
-                   <SummaryRow label="Selected Doctor" value={`Dr ${id}`} />
+                   <SummaryRow label="Selected Doctor" value={`Dr ${doctor.name}`} />
                    <SummaryRow label="Selected Date" value={selectedDate || "Not selected"} color={selectedDate ? "text-teal-700" : "text-rose-400"} />
-                   <SummaryRow label="Consultation Fee" value="₹1000" color="text-rose-500" />
+                   <SummaryRow label="Consultation Fee" value={`₹${doctor.fees || 1000}`} color="text-rose-500" />
                 </div>
                 <div className="pt-6 border-t border-teal-100">
                    <p className="text-[10px] font-black text-teal-600 uppercase mb-4 tracking-widest">Payment Method</p>
                    <div className="flex gap-4">
-                      {/* Interactive payment toggle logic */}
                       <button onClick={() => setPaymentMethod("Cash")} className={`px-8 py-2.5 rounded-full text-xs font-black transition-all ${paymentMethod === "Cash" ? "bg-[#00a386] text-white" : "bg-white text-slate-400 border border-slate-100"}`}>Cash</button>
                       <button onClick={() => setPaymentMethod("Online")} className={`px-8 py-2.5 rounded-full text-xs font-black transition-all ${paymentMethod === "Online" ? "bg-[#00a386] text-white" : "bg-white text-slate-400 border border-slate-100"}`}>Online</button>
                    </div>
                 </div>
-                {/* Updated Confirm Booking button to trigger login check */}
                 <button 
                   disabled={!selectedDate}
                   onClick={handleBookingAttempt}
                   className={`w-full py-5 rounded-full font-black flex items-center justify-center gap-3 transition-all ${selectedDate ? "bg-[#00a386] text-white shadow-xl hover:bg-[#008f75]" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}
                 >
-                   <Phone size={18} /> Confirm Booking
+                   Confirm Booking
                 </button>
              </div>
           </div>
@@ -470,6 +716,7 @@ const DoctorProfile = () => {
   );
 };
 
+// Sub-components
 const StatCard = ({ label, value, icon }) => (
   <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-50 text-center flex-1 min-w-[85px]">
     <span className="text-xl mb-1 block">{icon}</span>
