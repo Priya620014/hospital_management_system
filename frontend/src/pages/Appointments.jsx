@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -36,8 +35,8 @@ const Appointments = () => {
       ]);
       const aptData = await aptRes.json();
       const svcData = await svcRes.json();
-      setDoctorAppointments(aptData);
-      setServiceBookings(svcData);
+      setDoctorAppointments(Array.isArray(aptData) ? aptData : []);
+      setServiceBookings(Array.isArray(svcData) ? svcData : []);
     } catch (err) {
       console.error("Database fetch failed:", err);
     } finally {
@@ -108,9 +107,12 @@ const Appointments = () => {
 
   const handleCancel = async () => {
     if (!cancelReason.trim()) return alert("Please provide a reason for cancellation.");
+    
+    // logic to determine which endpoint to hit based on the modal state
     const endpoint = cancelModal.isService 
       ? `http://localhost:4000/api/services/${cancelModal.id}` 
       : `http://localhost:4000/api/appointments/${cancelModal.id}`;
+
     try {
       const response = await fetch(endpoint, {
         method: "DELETE",
@@ -118,23 +120,19 @@ const Appointments = () => {
         body: JSON.stringify({ reason: cancelReason })
       });
       if (response.ok) {
-        const result = await response.json();
         setCancelModal({ show: false, id: null, isLate: false, isService: false });
         setCancelReason("");
         await fetchUserData();
-        const msg = result.fineCharged ? "Late cancellation fine applied." : "Cancelled successfully.";
-        setSuccessModal({ show: true, message: msg });
+        setSuccessModal({ show: true, message: "Cancelled successfully." });
       }
     } catch (err) { console.error("Cancellation error:", err); }
   };
 
-  
-const handleDownloadReceipt = (item) => {
+  const handleDownloadReceipt = (item) => {
     const doc = new jsPDF();
-    const primaryColor = [0, 163, 134]; // Medicare+ Teal
-    const secondaryColor = [51, 65, 85]; // Dark Slate for text
+    const primaryColor = [0, 163, 134];
+    const secondaryColor = [51, 65, 85];
 
-    // --- 1. Header Section ---
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
@@ -154,7 +152,6 @@ const handleDownloadReceipt = (item) => {
     doc.text(`Date of Issue: ${new Date().toLocaleDateString()}`, 150, 20);
     doc.text(`Receipt No: MED-${Math.floor(100000 + Math.random() * 900000)}`, 150, 24);
 
-    // --- 2. Patient Information Section ---
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.text("Patient Information", 14, 55);
@@ -163,16 +160,14 @@ const handleDownloadReceipt = (item) => {
     doc.setFont("helvetica", "normal");
     const patientInfoStart = 65;
 
-    // CHANGED: Matching keys used in your .map() and editData state
     doc.text(`Patient Name: ${item.patientName || "N/A"}`, 14, patientInfoStart);
     doc.text(`Patient ID: ${item.userId?.slice(-6).toUpperCase() || "TEMP-01"}`, 14, patientInfoStart + 7);
-    doc.text(`Mobile Number: ${item.patientMobile || "N/A"}`, 14, patientInfoStart + 14); // Corrected from mobile
+    doc.text(`Mobile Number: ${item.patientMobile || "N/A"}`, 14, patientInfoStart + 14); 
     
     doc.text(`Booking Date: ${item.appointmentDate || "N/A"}`, 110, patientInfoStart);
-    doc.text(`Booking Time: ${item.appointmentTime || "N/A"}`, 110, patientInfoStart + 7); // Corrected from undefined
+    doc.text(`Booking Time: ${item.appointmentTime || "N/A"}`, 110, patientInfoStart + 7); 
     doc.text(`Doctor/Provider: ${item.doctorName ? "Dr. " + item.doctorName : (item.serviceName || "Medical Staff")}`, 110, patientInfoStart + 14);
 
-    // --- 3. Bill Details Table ---
     doc.setFont("helvetica", "bold");
     doc.text("Bill Details", 14, 95);
 
@@ -202,7 +197,6 @@ const handleDownloadReceipt = (item) => {
       }
     });
 
-    // --- 4. Totals & Signature ---
     const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFont("helvetica", "bold");
     doc.text(`Total Amount: INR ${item.fees || 1000}.00`, 145, finalY);
@@ -222,6 +216,7 @@ const handleDownloadReceipt = (item) => {
 
     doc.save(`Medicare_Invoice_${item.patientName || "Receipt"}.pdf`);
   };
+
   return (
     <div className="min-h-screen bg-[#f1fcfb] pt-32 pb-20 px-6 lg:px-24">
       {successModal.show && (
@@ -261,7 +256,6 @@ const handleDownloadReceipt = (item) => {
           </div>
         ) : (
           <div className="space-y-16">
-            {/* DOCTOR SECTION */}
             <div className="space-y-8 text-center">
               <h2 className="text-4xl font-black text-[#137d6e] flex items-center justify-center gap-3"><UserIcon className="text-teal-600" size={32} /> Doctor Appointments</h2>
               <div className="grid gap-6">
@@ -303,7 +297,6 @@ const handleDownloadReceipt = (item) => {
               </div>
             </div>
 
-            {/* SERVICES SECTION */}
             <div className="space-y-8 text-center">
               <h2 className="text-4xl font-black text-[#137d6e] flex items-center justify-center gap-3"><TestTube className="text-[#00a386]" size={32} /> Your Booked Services</h2>
               <div className="grid gap-6">
