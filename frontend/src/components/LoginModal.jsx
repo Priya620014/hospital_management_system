@@ -230,7 +230,7 @@ const LoginModal = ({ isOpen, onClose }) => {
             <SignIn 
               appearance={appearanceSettings}
               routing="virtual"
-              forceRedirectUrl="/appointments"
+              forceRedirectUrl="/"
               /* Clears existing sessions to force Account Chooser */
               initialValues={{
                 emailAddress: "",

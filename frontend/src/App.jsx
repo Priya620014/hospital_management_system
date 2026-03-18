@@ -272,7 +272,7 @@ const AppContent = ({ openLogin, isLoginOpen, setIsLoginOpen }) => {
         <Route path="/admin/service-appointments" element={<ServiceAppointments />} />
         <Route path="/admin/login" element={<AdminLogin />} />
       </Routes>
-
+    
       <LoginModal 
         isOpen={isLoginOpen} 
         onClose={() => setIsLoginOpen(false)} 
@@ -295,7 +295,7 @@ const App = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00a386]"></div>
         </div>
       </ClerkLoading>
-
+    
       <ClerkLoaded>
         <Router>
           <AppContent 

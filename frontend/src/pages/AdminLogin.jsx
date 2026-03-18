@@ -128,7 +128,7 @@ const DoctorAdminLogin = () => {
         localStorage.setItem("adminEmail", email);
         
         // Redirecting to the main service dashboard as requested in previous steps
-        navigate("/admin-dashboard"); 
+        navigate("/admin/dashboard"); 
       } else {
         setError(data.message || "Invalid credentials.");
       }

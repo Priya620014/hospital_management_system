@@ -384,3 +384,176 @@ app.post('/api/admin/login', async (req, res) => {
 });
 const PORT = 4000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+
+// import express from 'express';
+// import mongoose from 'mongoose';
+// import cors from 'cors';
+// import dotenv from 'dotenv';
+// import Razorpay from 'razorpay';
+// import crypto from 'crypto';
+// import { v2 as cloudinary } from 'cloudinary';
+// import fileUpload from 'express-fileupload';
+
+// // Model Imports
+// import Doctor from './models/Doctor.js';
+// import Appointment from './models/appointmentSchema.js';
+// import User from './models/User.js';
+// import ServiceBooking from './models/ServiceBooking.js';
+// import Service from './models/Service.js';
+
+// dotenv.config();
+
+// const app = express();
+// app.use(cors());
+// app.use(express.json());
+// app.use(fileUpload({ useTempFiles: true }));
+
+// // --- CLOUDINARY CONFIGURATION ---
+// cloudinary.config({ 
+//   cloud_name: 'dqljwkiyo', 
+//   api_key: '618767924698894', 
+//   api_secret: '3f6RXKXfkowH-cHV9n_PSsvp5Js' 
+// });
+
+// // Razorpay Initialization
+// const razorpay = new Razorpay({
+//   key_id: 'rzp_test_eWbSbu5AuEM5Ey', 
+//   key_secret: 'tBff6amDLXeNGSEphKN81tfZ',
+// });
+
+// // --- DATABASE CONNECTION ---
+// mongoose.connect(process.env.MONGODB_URI)
+//   .then(() => console.log("✅ MongoDB Connected"))
+//   .catch(err => console.log("❌ MongoDB Connection Error:", err));
+
+// // --- PAYMENT ROUTES ---
+// app.post('/api/create-order', async (req, res) => {
+//   try {
+//     const options = {
+//       amount: req.body.amount * 100,
+//       currency: "INR",
+//       receipt: `receipt_${Date.now()}`,
+//     };
+//     const order = await razorpay.orders.create(options);
+//     res.json(order); 
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+// app.post('/api/verify-payment', (req, res) => {
+//   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+//   const hmac = crypto.createHmac('sha256', 'tBff6amDLXeNGSEphKN81tfZ');
+//   hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+//   const generatedSignature = hmac.digest('hex');
+//   if (generatedSignature === razorpay_signature) {
+//     res.json({ status: "success" });
+//   } else {
+//     res.status(400).json({ status: "failure" });
+//   }
+// });
+
+// // --- DOCTOR & APPOINTMENT ROUTES ---
+// app.get('/api/doctors', async (req, res) => {
+//   try { res.json(await Doctor.find()); } catch (err) { res.status(500).json({ error: "Database error" }); }
+// });
+
+// app.post('/api/appointments', async (req, res) => {
+//   try {
+//     const newAppointment = new Appointment(req.body);
+//     await newAppointment.save();
+//     res.status(201).json({ message: "Appointment saved!" });
+//   } catch (err) { res.status(400).json({ error: err.message }); }
+// });
+
+// app.get('/api/appointments/user/:clerkId', async (req, res) => {
+//   try { res.json(await Appointment.find({ userId: req.params.clerkId })); } catch (err) { res.status(500).json({ error: "Failed to fetch appointments" }); }
+// });
+
+// // --- USER SERVICE BOOKING ROUTES ---
+// app.post('/api/services/book', async (req, res) => {
+//   try {
+//     // Log the incoming data to verify userId is present
+//     console.log("Booking data received:", req.body);
+    
+//     const newService = new ServiceBooking(req.body);
+//     await newService.save();
+//     res.status(201).json({ success: true, message: "Service booked successfully!" });
+//   } catch (err) {
+//     console.error("Booking Error:", err);
+//     res.status(400).json({ error: err.message });
+//   }
+// });
+
+// app.get('/api/services/user/:clerkId', async (req, res) => {
+//   try {
+//     const { clerkId } = req.params;
+//     // Querying 'userId' field in the 'servicebookings' collection
+//     const services = await ServiceBooking.find({ userId: clerkId }).sort({ createdAt: -1 });
+//     res.json(services);
+//   } catch (err) {
+//     res.status(500).json({ error: "Failed to fetch services" });
+//   }
+// });
+// // --- ADMIN ROUTES ---
+
+// // Admin Login
+// app.post('/api/admin/login', async (req, res) => {
+//   const { email, password } = req.body;
+//   const AUTHORIZED_ADMIN = process.env.ADMIN_EMAIL || "priyanshi@medicare.com";
+//   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+
+//   if (email === AUTHORIZED_ADMIN && password === ADMIN_PASSWORD) {
+//     res.json({ success: true, message: "Admin Authenticated", token: "admin-secure-session-token" });
+//   } else {
+//     res.status(401).json({ success: false, message: "Unauthorized Entry" });
+//   }
+// });
+
+// // Service Management
+// app.post('/api/admin/add-service', async (req, res) => {
+//   try {
+//     let imageUrl = "";
+//     if (req.files && req.files.image) {
+//       const result = await cloudinary.uploader.upload(req.files.image.tempFilePath, { folder: 'medicare_services' });
+//       imageUrl = result.secure_url;
+//     }
+//     const newService = new Service({
+//       ...req.body,
+//       instructions: req.body.instructions ? JSON.parse(req.body.instructions) : [],
+//       slots: req.body.slots ? JSON.parse(req.body.slots) : [],
+//       imageUrl
+//     });
+//     await newService.save();
+//     res.status(201).json({ success: true, message: "Service added successfully!" });
+//   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+// });
+
+// app.get('/api/admin/all-services', async (req, res) => {
+//   try { res.json(await Service.find({}).sort({ createdAt: -1 })); } catch (err) { res.status(500).json({ error: "Failed to fetch services" }); }
+// });
+
+// app.get('/api/admin/service-appointments', async (req, res) => {
+//   try { res.json(await ServiceBooking.find({}).sort({ createdAt: -1 })); } catch (err) { res.status(500).json({ error: "Failed to fetch service appointments" }); }
+// });
+// // server.js
+// app.get('/api/services/user/:clerkId', async (req, res) => {
+//   try {
+//     const { clerkId } = req.params;
+//     console.log("Fetching bookings for ID:", clerkId); // Debugging log
+
+//     // We query by 'userId' because that's what we save in the POST route
+//     const services = await ServiceBooking.find({ userId: clerkId }).sort({ createdAt: -1 });
+    
+//     console.log("Found services:", services.length); // Debugging log
+//     res.json(services);
+//   } catch (err) {
+//     console.error("Fetch Error:", err);
+//     res.status(500).json({ error: "Failed to fetch services" });
+//   }
+// });
+
+
+// const PORT = 4000;
+// app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

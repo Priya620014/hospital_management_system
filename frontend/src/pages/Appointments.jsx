@@ -25,16 +25,21 @@ const Appointments = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [successModal, setSuccessModal] = useState({ show: false, message: "" });
 
+  // ... inside fetchUserData function in Appointments.jsx ...
+
   const fetchUserData = async () => {
     if (!isSignedIn || !user) return;
     setLoading(true);
     try {
       const [aptRes, svcRes] = await Promise.all([
         fetch(`http://localhost:4000/api/appointments/user/${user.id}`),
-        fetch(`http://localhost:4000/api/services/user/${user.id}`)
+        // UPDATED ENDPOINT to match consolidated server.js
+        fetch(`http://localhost:4000/api/services/user/${user.id}`) 
       ]);
       const aptData = await aptRes.json();
       const svcData = await svcRes.json();
+      
+      // Ensure we set arrays
       setDoctorAppointments(Array.isArray(aptData) ? aptData : []);
       setServiceBookings(Array.isArray(svcData) ? svcData : []);
     } catch (err) {
@@ -43,6 +48,8 @@ const Appointments = () => {
       setLoading(false);
     }
   };
+
+// ... keep rest of Appointments.jsx as is ...
 
   useEffect(() => {
     fetchUserData();
