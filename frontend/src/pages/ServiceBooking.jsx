@@ -483,7 +483,7 @@ const ServiceBooking = () => {
   useEffect(() => {
     const fetchServiceDetails = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/admin/all-services");
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/all-services`);
         const data = await res.json();
         // Match the URL slug to the service name in DB
         const found = data.find(s => s.name.toLowerCase().replace(/\s+/g, '-') === serviceName);
@@ -508,7 +508,7 @@ const ServiceBooking = () => {
 
     try {
       // 1. Create Razorpay Order using price from DB
-      const orderRes = await fetch("http://localhost:4000/api/create-order", {
+      const orderRes = await fetch(`${import.meta.env.VITE_API_URL}/api/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: dbService?.price || 599 }),
@@ -523,8 +523,7 @@ const ServiceBooking = () => {
         description: `Lab Test: ${dbService?.name}`,
         order_id: order.id,
         handler: async (response) => {
-          // 2. Verify Payment
-          const verifyRes = await fetch("http://localhost:4000/api/verify-payment", {
+          const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/api/verify-payment`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(response),
@@ -532,8 +531,7 @@ const ServiceBooking = () => {
           const verifyData = await verifyRes.json();
 
           if (verifyData.status === "success") {
-            // 3. Save to Database using your specific endpoint
-            const saveRes = await fetch("http://localhost:4000/api/services/book", {
+            const saveRes = await fetch(`${import.meta.env.VITE_API_URL}/api/services/book`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

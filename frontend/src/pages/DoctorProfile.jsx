@@ -420,7 +420,7 @@ const DoctorProfile = ({ onLoginClick }) => {
   useEffect(() => {
     const fetchDoctorDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:4000/api/doctors/${id}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/doctors/${id}`);
         if (!response.ok) { setDoctor(null); return; }
         const data = await response.json();
         setDoctor(data);
@@ -472,7 +472,7 @@ const DoctorProfile = ({ onLoginClick }) => {
 
     if (paymentMethod === "Online") {
       try {
-        const orderRes = await fetch("http://localhost:4000/api/create-order", {
+        const orderRes = await fetch(`${import.meta.env.VITE_API_URL}/api/create-order`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ amount: doctor.fees || 1000 }),
@@ -489,7 +489,7 @@ const DoctorProfile = ({ onLoginClick }) => {
           description: "Doctor Consultation",
           order_id: order.id,
           handler: async (response) => {
-            const verifyRes = await fetch("http://localhost:4000/api/verify-payment", {
+            const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/api/verify-payment`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(response),
@@ -522,7 +522,7 @@ const DoctorProfile = ({ onLoginClick }) => {
 
   const saveBookingToDatabase = async (paymentId) => {
     // UPDATED: Mapping patientDetails to the new schema keys
-    const response = await fetch("http://localhost:4000/api/appointments", {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/appointments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -29,7 +29,9 @@ const AppointmentSchema = new mongoose.Schema({
   appointmentDate: String,
   appointmentTime: String,
   paymentMethod: String,
-  status: { type: String, default: 'pending' }
+  status: { type: String, default: 'Confirmed' },
+  prescriptionUrl: { type: String, default: '' }
+  
 }, { timestamps: true });
 
 export default mongoose.model('Appointment', AppointmentSchema);

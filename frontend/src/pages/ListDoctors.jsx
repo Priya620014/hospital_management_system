@@ -289,7 +289,7 @@ const ListDoctors = () => {
   const fetchDoctors = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:4000/api/admin/doctors-list");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/doctors-list`);
       const data = await res.json();
       
       console.log("Fetched Doctors Data:", data); // Successfully appearing in your console

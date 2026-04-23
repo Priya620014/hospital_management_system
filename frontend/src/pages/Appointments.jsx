@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Calendar, TestTube, LockKeyhole, ArrowRight, 
-  User as UserIcon, Clock, MapPin, Edit3, Save, X, CheckCircle, Trash2, AlertTriangle, Phone 
+  User as UserIcon, Clock, MapPin, Edit3, Save, X, CheckCircle, Trash2, AlertTriangle, Phone, FileText
 } from "lucide-react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import jsPDF from "jspdf";
@@ -32,9 +32,8 @@ const Appointments = () => {
     setLoading(true);
     try {
       const [aptRes, svcRes] = await Promise.all([
-        fetch(`http://localhost:4000/api/appointments/user/${user.id}`),
-        // UPDATED ENDPOINT to match consolidated server.js
-        fetch(`http://localhost:4000/api/services/user/${user.id}`) 
+        fetch(`${import.meta.env.VITE_API_URL}/api/appointments/user/${user.id}`),
+        fetch(`${import.meta.env.VITE_API_URL}/api/services/user/${user.id}`) 
       ]);
       const aptData = await aptRes.json();
       const svcData = await svcRes.json();
@@ -77,7 +76,7 @@ const Appointments = () => {
 
   const saveChanges = async (id) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/appointments/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/appointments/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editData),
@@ -92,7 +91,7 @@ const Appointments = () => {
 
   const saveServiceChanges = async (id) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/services/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/services/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(serviceEditData),
@@ -117,8 +116,8 @@ const Appointments = () => {
     
     // logic to determine which endpoint to hit based on the modal state
     const endpoint = cancelModal.isService 
-      ? `http://localhost:4000/api/services/${cancelModal.id}` 
-      : `http://localhost:4000/api/appointments/${cancelModal.id}`;
+      ? `${import.meta.env.VITE_API_URL}/api/services/${cancelModal.id}` 
+      : `${import.meta.env.VITE_API_URL}/api/appointments/${cancelModal.id}`;
 
     try {
       const response = await fetch(endpoint, {
@@ -289,13 +288,35 @@ const Appointments = () => {
                               <span className="flex items-center gap-1"><Calendar size={14}/> {apt.appointmentDate}</span>
                               <span className="flex items-center gap-1"><Clock size={14}/> {apt.appointmentTime}</span>
                               <span className="flex items-center gap-1 text-teal-600 font-bold bg-teal-50 px-2 rounded">👤 {apt.patientName}</span>
+                              <span className={`flex items-center gap-1 font-bold px-3 py-1 rounded-full text-xs uppercase ${
+                                apt.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                                apt.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {apt.status === 'Completed' && <CheckCircle size={12}/>}
+                                {apt.status || 'Pending'}
+                              </span>
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <button onClick={() => handleDownloadReceipt(apt)} className="text-[#f87171] font-bold text-sm hover:underline">Download Receipt</button>
-                          <button onClick={() => startEditing(apt)} className="p-3 bg-slate-50 text-slate-400 rounded-full hover:bg-teal-50 hover:text-[#00a386]"><Edit3 size={18} /></button>
-                          <button onClick={() => initiateCancel(apt)} className="p-3 bg-rose-50 text-rose-400 rounded-full hover:bg-rose-100 hover:text-rose-600"><Trash2 size={18} /></button>
+                          {apt.prescriptionUrl && (
+                            <a
+                              href={apt.prescriptionUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1 text-[#00a386] font-bold text-sm hover:underline"
+                            >
+                              <FileText size={14} /> Prescription
+                            </a>
+                          )}
+                          {apt.status !== 'Completed' && apt.status !== 'Cancelled' && (
+                            <>
+                              <button onClick={() => startEditing(apt)} className="p-3 bg-slate-50 text-slate-400 rounded-full hover:bg-teal-50 hover:text-[#00a386]"><Edit3 size={18} /></button>
+                              <button onClick={() => initiateCancel(apt)} className="p-3 bg-rose-50 text-rose-400 rounded-full hover:bg-rose-100 hover:text-rose-600"><Trash2 size={18} /></button>
+                            </>
+                          )}
                         </div>
                       </div>
                     )}

@@ -229,8 +229,10 @@ import AddService from "./pages/AddService";
 import ListService from "./pages/ListService";
 import ServiceAppointments from "./pages/ServiceAppointments";
 import AdminLogin from "./pages/AdminLogin";
+import SymptomChecker from "./pages/SymptomChecker";
 
-const PUBLISHABLE_KEY = "pk_test_dmVyaWZpZWQtZ3JpenpseS0xNi5jbGVyay5hY2NvdW50cy5kZXYk";
+
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 const AppContent = ({ openLogin, isLoginOpen, setIsLoginOpen }) => {
   const location = useLocation();
@@ -271,6 +273,7 @@ const AppContent = ({ openLogin, isLoginOpen, setIsLoginOpen }) => {
         <Route path="/admin/list-services" element={<ListService />} />
         <Route path="/admin/service-appointments" element={<ServiceAppointments />} />
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/symptom-checker" element={<SymptomChecker />} />
       </Routes>
     
       <LoginModal 

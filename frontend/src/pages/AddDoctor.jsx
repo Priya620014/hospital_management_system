@@ -164,7 +164,7 @@ const AddDoctor = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:4000/api/admin/add-doctor", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/add-doctor`, {
         method: "POST",
         body: data, // Fetch automatically sets the correct headers for FormData
       });

@@ -107,14 +107,8 @@ const DoctorAdminLogin = () => {
     e.preventDefault();
     setError("");
 
-    // 1. FRONTEND GUARD: Restrict to your specific admin email
-    if (email !== "priyanshi@medicare.com") {
-      setError("Unauthorized: Access restricted to authorized admin only.");
-      return;
-    }
-
     try {
-      const res = await fetch("http://localhost:4000/api/admin/login", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

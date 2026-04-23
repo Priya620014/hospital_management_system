@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from "react"; 
-import { Search, AlertCircle, Loader2 } from "lucide-react"; // Added Loader2
+import { Search, AlertCircle, Loader2 } from "lucide-react";
 import DoctorCard from "../components/DoctorCard";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 
 const Doctors = () => {
@@ -10,16 +10,23 @@ const Doctors = () => {
   const [allDoctors, setAllDoctors] = useState([]); 
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { isSignedIn } = useAuth(); 
 
   const [errorModal, setErrorModal] = useState({ show: false, message: "" });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const dept = params.get('department');
+    if (dept) setSearchQuery(dept);
+  }, [location.search]);
 
   // FETCH DOCTORS FROM BACKEND
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         // Ensure this URL is exactly as written, with no trailing colons
-        const response = await fetch("http://localhost:4000/api/doctors");
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/doctors`);
         
         if (!response.ok) {
           throw new Error(`Server responded with status: ${response.status}`);

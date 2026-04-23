@@ -121,7 +121,7 @@ const ServiceDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchData = async () => {
-    const res = await fetch("http://localhost:4000/api/admin/service-stats");
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/service-stats`);
     const json = await res.json();
     setData(json);
   };

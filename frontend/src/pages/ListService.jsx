@@ -7,7 +7,7 @@ const ListServices = () => {
   const [filter, setFilter] = useState("All");
 
   const fetchServices = async () => {
-    const res = await fetch("http://localhost:4000/api/admin/all-services");
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/all-services`);
     const data = await res.json();
     setServices(data);
   };
